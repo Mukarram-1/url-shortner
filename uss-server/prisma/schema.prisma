@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model apikey {
+  api_key_id Int       @id(map: "api_key_pkey") @default(autoincrement())
+  user_id    String    @db.Uuid
+  api_key    String    @unique(map: "api_key_api_key_key") @db.VarChar(255)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  expires_at DateTime? @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+  is_deleted Boolean   @default(false)
+  users      users     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "api_key_user_id_fkey")
+}
+
+model auditlog {
+  audit_id    Int       @id(map: "audit_log_pkey") @default(autoincrement())
+  url_id      String    @db.Uuid
+  action      String    @db.VarChar(50)
+  changed_by  String    @db.Uuid
+  change_date DateTime  @default(now()) @db.Timestamp(6)
+  details     String?
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime? @db.Timestamp(6)
+  is_deleted  Boolean   @default(false)
+  users       users     @relation(fields: [changed_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "audit_log_changed_by_fkey")
+  url         url       @relation(fields: [url_id], references: [url_id], onDelete: Cascade, onUpdate: NoAction, map: "audit_log_url_id_fkey")
+}
+
+model logo {
+  logo_id    Int       @id @default(autoincrement())
+  user_id    String    @db.Uuid
+  logo_path  String    @db.VarChar(255)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+  is_deleted Boolean   @default(false)
+  users      users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  url        url[]
+}
+
+model url {
+  url_id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String?      @db.Uuid
+  original_url     String?
+  short_url        String       @unique @db.VarChar(20)
+  logo_id          Int?
+  tag_id           Int?
+  url_type         urltypeenum?
+  associated       Boolean      @default(false)
+  expiration_date  DateTime?    @db.Date
+  created_at       DateTime     @default(now()) @db.Timestamp(6)
+  updated_at       DateTime     @default(now()) @db.Timestamp(6)
+  deleted_at       DateTime?    @db.Timestamp(6)
+  is_deleted       Boolean      @default(false)
+  is_pre_generated Boolean      @default(false)
+  associated_at    DateTime?    @db.Timestamp(6)
+  status           statusenum   @default(active)
+  auditlog         auditlog[]
+  logo             logo?        @relation(fields: [logo_id], references: [logo_id])
+  urltag           urltag?      @relation(fields: [tag_id], references: [tag_id])
+  users            users?       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  urlclick         urlclick[]
+}
+
+model urlclick {
+  click_id    Int       @id(map: "url_click_pkey") @default(autoincrement())
+  url_id      String    @db.Uuid
+  access_date DateTime  @db.Date
+  access_time DateTime  @db.Time(6)
+  ip_address  String    @db.VarChar(45)
+  user_agent  String
+  referrer    String?
+  country     String?   @db.VarChar(50)
+  city        String?   @db.VarChar(50)
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime? @db.Timestamp(6)
+  is_deleted  Boolean   @default(false)
+  url         url       @relation(fields: [url_id], references: [url_id], onDelete: Cascade, onUpdate: NoAction, map: "url_click_url_id_fkey")
+}
+
+model urltag {
+  tag_id     Int       @id(map: "url_tag_pkey") @default(autoincrement())
+  user_id    String    @db.Uuid
+  tag_name   String    @db.VarChar(50)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+  is_deleted Boolean   @default(false)
+  url        url[]
+  users      users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "url_tag_user_id_fkey")
+}
+
+model userrole {
+  role_id     Int       @id(map: "user_role_pkey") @default(autoincrement())
+  role_name   String    @unique(map: "user_role_role_name_key") @db.VarChar(50)
+  description String?
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime? @db.Timestamp(6)
+  is_deleted  Boolean   @default(false)
+  users       users[]
+}
+
+model users {
+  user_id       String     @id(map: "user_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username      String     @unique(map: "user_username_key") @db.VarChar(50)
+  email         String     @unique(map: "user_email_key") @db.VarChar(100)
+  password_hash String     @db.VarChar(255)
+  role_id       Int?
+  created_at    DateTime   @default(now()) @db.Timestamp(6)
+  updated_at    DateTime   @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime?  @db.Timestamp(6)
+  is_deleted    Boolean    @default(false)
+  apikey        apikey[]
+  auditlog      auditlog[]
+  logo          logo[]
+  url           url[]
+  urltag        urltag[]
+  userrole      userrole?  @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "user_role_id_fkey")
+}
+
+enum statusenum {
+  active
+  inactive
+}
+
+enum urltypeenum {
+  store
+  product
+  misc
+}
