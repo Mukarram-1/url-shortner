@@ -1,0 +1,31 @@
+.analytics-card {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    width: 30%;
+    box-shadow: 0px 0px 10px rgba(108, 58, 147, 0.1);
+    justify-content: center;
+    height: 120px;
+    background-color: white;
+}
+
+.analytics-card-icon {
+    margin-right: 50px;
+}
+
+.analytics-card-content {
+    flex: 1;
+}
+
+.analytics-card-heading {
+    margin: 0;
+    font-size: 18px;
+}
+
+.analytics-card-number {
+    margin: 5px 0 0;
+    font-size: 24px;
+    font-weight: bold;
+}
